@@ -82,6 +82,21 @@ function App() {
     });
   };
 
+// リセットボタンが押された時の処理
+  const resetParas = () => {
+    // 最初の1匹だけの状態に戻します
+    setParas([
+      { 
+        id: Date.now(), 
+        x: 370, 
+        y: 270, 
+        vx: 1, 
+        vy: 1, 
+        stage: 1 
+      }
+    ]);
+  };
+
   return (
     <div className="container">
       <div className="stage">
@@ -104,6 +119,13 @@ function App() {
           );
         })}
       </div>
+
+      <div style={{ marginTop: '20px' }}>
+        <button className="reset-button" onClick={resetParas}>
+          最初からやり直す
+        </button>
+      </div>
+
       <p style={{ color: 'white', marginTop: '20px' }}>
         クリックして分裂させてね！ (現在: {paras.length} 匹 / 第{paras[0]?.stage || 0}世代)
       </p>
