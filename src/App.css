@@ -55,3 +55,10 @@ body {
   transform: translateY(2px); /* 少し下に沈む */
   box-shadow: 0 2px 0 #c0392b; /* 影を薄くする */
 }
+
+/* 食べ物用のスタイル（体と影を消す） */
+.parachan.food {
+  background-color: transparent;
+  box-shadow: none;
+  font-size: 30px; /* 絵文字を大きくする */
+}
