@@ -12,6 +12,10 @@ interface Parachan {
   isFood?: boolean; // 食べ物かどうかを判定するフラグ（?は「なくても良い」という意味）
   icon: string;     // 表示する中身（(・ω・) や 🍎）
   hasDroppedFood?: boolean; // すでに食べ物を出したかどうかの記録
+  isEating?: boolean;   // もぐもぐ中かどうか
+  eatTimer?: number;    // もぐもぐが終わるまでの時間
+  isDropping?: boolean; // ドロップ中（まだ食べられない）フラグ
+  munchText?: string;   // もぐもぐ中のセリフを保存する
 }
 
 function App() {
@@ -24,51 +28,100 @@ function App() {
     { id: Date.now(), x: 370, y: 270, vx: 0.6, vy: 0.6, stage: 1, icon: '(・ω・)'}
   ]);
 
-  useEffect(() => {
+  // 食べ物をかぞえるための変数
+  const [eatCount, setEatCount] = useState(0);
+
+useEffect(() => {
+    let animationFrameId: number;
+
     const move = () => {
-      setParas((currentParas) =>
-        currentParas.map((p) => {
-          // 世代が上がるごとにサイズを 80% ずつ小さくする計算
+      setParas((currentParas) => {
+        const foods = currentParas.filter(p => p.isFood);
+
+        // --- 1. まずは全員の移動を計算 ---
+        const movedParas = currentParas.map((p) => {
+          if (p.isEating && p.eatTimer && p.eatTimer > 0) {
+            return { ...p, vx: 0, vy: 0, eatTimer: p.eatTimer - 1 };
+          }
+          if (p.isEating && p.eatTimer === 0) {
+            return { ...p, isEating: false, vx: (Math.random() - 0.5) * 2, vy: (Math.random() - 0.5) * 2, icon: '(・ω・)' };
+          }
+
+          if (!p.isFood && !p.isEating) {
+            const pSize = BASE_PARA_SIZE * Math.pow(0.85, p.stage - 1);
+            const collidedFood = foods.find(f => {
+              if (f.isDropping) return false; 
+              const fSize = BASE_PARA_SIZE * Math.pow(0.85, f.stage - 1);
+              const dx = (p.x + pSize / 2) - (f.x + fSize / 2);
+              const dy = (p.y + pSize / 2) - (f.y + fSize / 2);
+              return Math.sqrt(dx * dx + dy * dy) < (pSize + fSize) / 3;
+            });
+
+            if (collidedFood) {
+              const phrases = ['ばりうま', 'うまかー', 'んめ', 'うみゃー', 'なまらうまい', 'おいしか'];
+              const randomPhrase = phrases[Math.floor(Math.random() * phrases.length)];
+              // ★ここでは setEatCount を呼ばない！（二重カウント防止）
+              return { ...p, isEating: true, eatTimer: 120, vx: 0, vy: 0, icon: '(・u・)', munchText: randomPhrase };
+            }
+          }
+
+          // 物理計算の部分（ここはそのままでOK）
           const currentSize = BASE_PARA_SIZE * Math.pow(0.85, p.stage - 1);
-          
           let nextX = p.x + p.vx;
           let nextY = p.y + p.vy;
           let nextVx = p.vx;
           let nextVy = p.vy;
+          let stillDropping = p.isDropping;
 
-          // --- 食べ物専用の物理法則 ---
           if (p.isFood) {
-            // 1. 重力を加える（少しずつ下に引っ張る）
             nextVy += 0.1;
-
-            // 2. 床（ステージの底）に当たった時のバウンド処理
             if (nextY >= STAGE_HEIGHT - currentSize) {
               nextY = STAGE_HEIGHT - currentSize;
-              nextVy = -nextVy * 0.2; // 跳ね返り係数（半分くらいの勢いで跳ねる）
-              nextVx *= 0.8; // 摩擦で横移動も少し減速
-
-              // 速度が十分に小さくなったら完全に止める
+              nextVy = -nextVy * 0.2;
+              nextVx *= 0.8;
+              stillDropping = false;
               if (Math.abs(nextVy) < 1) nextVy = 0;
               if (Math.abs(nextVx) < 0.1) nextVx = 0;
             }
-
-            // 3. 壁に当たった時
-            if (nextX <= 0 || nextX >= STAGE_WIDTH - currentSize) {
-              nextVx = -nextVx * 0.5;
-            }
+            if (nextX <= 0 || nextX >= STAGE_WIDTH - currentSize) nextVx = -nextVx * 0.5;
           } else {
-            // --- 通常のぱらちゃんの跳ね返り（今まで通り） ---
             if (nextX <= 0 || nextX >= STAGE_WIDTH - currentSize) nextVx = -p.vx;
             if (nextY <= 0 || nextY >= STAGE_HEIGHT - currentSize) nextVy = -p.vy;
           }
 
-          return { ...p, x: nextX, y: nextY, vx: nextVx, vy: nextVy };
-        })
-      );
+          return { ...p, x: nextX, y: nextY, vx: nextVx, vy: nextVy, isDropping: stillDropping };
+        });
+
+        // --- 2. 食べ物を消す処理 ---
+        const finalParas = movedParas.filter(p => {
+          if (!p.isFood) return true;
+          
+          const isBeingEaten = movedParas.some(para => {
+            if (para.isFood || !para.isEating || para.eatTimer !== 120 || p.isDropping) return false;
+            const pSize = BASE_PARA_SIZE * Math.pow(0.85, para.stage - 1);
+            const fSize = BASE_PARA_SIZE * Math.pow(0.85, p.stage - 1);
+            const dx = (para.x + pSize / 2) - (p.x + fSize / 2);
+            const dy = (para.y + pSize / 2) - (p.y + fSize / 2);
+            return Math.sqrt(dx * dx + dy * dy) < (pSize + fSize) / 3;
+          });
+
+          // ★食べ物が消されるときだけ、カウントを1増やす！
+          if (isBeingEaten) {
+            setEatCount(prev => prev + 1); // ここ1箇所だけにします
+            return false;
+          }
+          return true;
+        });
+
+        return finalParas;
+      });
+
+      animationFrameId = requestAnimationFrame(move);
     };
-    const timer = requestAnimationFrame(move);
-    return () => cancelAnimationFrame(timer);
-  }, [paras]);
+
+    animationFrameId = requestAnimationFrame(move);
+    return () => cancelAnimationFrame(animationFrameId);
+  }, []); // ★空の配列にすることで、タイマーの重複を防ぎます
 
   // 分裂の処理
   const splitParachan = (clickedId: number) => {
@@ -92,12 +145,12 @@ function App() {
             { ...p, id: Date.now() + Math.random(), stage: nextStage, vx: p.vx, icon: '(・ω・)' },
             { ...p, id: Date.now() + Math.random(), stage: nextStage, vx: -p.vx, icon: '(・ω・)' }
           );
-        } else if (!p.hasDroppedFood) {
+        } else {
           // --- 【食べ物排出】最小サイズなら、自分はそのままで食べ物を1つ追加する ---
-          // 1. 自分自身に「もう出したよ」という印をつけて残す
-          result.push({ ...p, hasDroppedFood: true });
+          // 自分自身に「もう出したよ」という印をつけて残す
+          result.push(p);
 
-          // 2. 新しい「食べ物データ」を1つ追加する
+          // 新しい「食べ物データ」を1つ追加する
           const randomIcon = foodIcons[Math.floor(Math.random() * foodIcons.length)];
           result.push({
             id: Date.now() + Math.random(),
@@ -107,11 +160,9 @@ function App() {
             vy: -5,
             stage: p.stage, // サイズは最小ぱらちゃんと同じにする
             isFood: true,   // これが食べ物であるという印
-            icon: randomIcon
+            icon: randomIcon,
+            isDropping: true // 最初は「ドロップ中」にする
           });
-        } else {
-          // すでに食べ物を出したことがある最小ぱらちゃんは、これ以上分裂も食べ物も出さない
-          result.push(p);
         }
       } else {
         // クリックされていないものは、そのまま配列に残す
@@ -136,6 +187,7 @@ function App() {
       , icon: '(・ω・)'
       }
     ]);
+    setEatCount(0);
   };
 
   return (
@@ -155,6 +207,25 @@ function App() {
               }}
               onClick={() => splitParachan(p.id)}
             >
+
+              {/* 【追加】もぐもぐ中のセリフ表示 */}
+              {p.isEating && (
+                <div style={{
+                  position: 'absolute',
+                  top: '-30px', // ぱらちゃんの少し上に表示
+                  left: '50%',
+                  transform: 'translateX(-50%)',
+                  fontSize: '14px',
+                  fontWeight: 'bold',
+                  color: '#fff',
+                  backgroundColor: 'rgba(0,0,0,0.5)', // 読みやすいように背景を少し暗く
+                  padding: '2px 6px',
+                  borderRadius: '10px',
+                  whiteSpace: 'nowrap'
+                }}>
+                  {p.munchText}
+                </div>
+              )}
               {p.icon}
             </div>
           );
@@ -168,7 +239,8 @@ function App() {
       </div>
 
       <p style={{ color: 'white', marginTop: '20px' }}>
-        クリックして分裂させてね！ (現在: {paras.length} 匹 / 第{paras[0]?.stage || 0}世代)
+        クリックして分裂させてね！
+        🍎 これまでに食べたフルーツ: <span style={{ fontSize: '24px', color: '#ffeb3b', fontWeight: 'bold' }}>{eatCount}</span> 個
       </p>
     </div>
   )
