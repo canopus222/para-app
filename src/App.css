@@ -35,3 +35,23 @@ body {
   box-shadow: 0 4px 8px rgba(0,0,0,0.2);
   transition: transform 0.1s;
 }
+
+/* リセットボタンのスタイル */
+.reset-button {
+  padding: 10px 24px;
+  font-size: 16px;
+  font-weight: bold;
+  color: white;
+  background-color: #e74c3c; /* 綺麗な赤色 */
+  border: none;
+  border-radius: 30px; /* 丸いボタン */
+  cursor: pointer;
+  box-shadow: 0 4px 0 #c0392b; /* 立体感 */
+  transition: all 0.1s;
+}
+
+/* ボタンを押したとき（クリック中）の演出 */
+.reset-button:active {
+  transform: translateY(2px); /* 少し下に沈む */
+  box-shadow: 0 2px 0 #c0392b; /* 影を薄くする */
+}
