@@ -246,59 +246,71 @@ function App() {
   };
 
   return (
-    <div className="container">
-      <div className="stage">
-        {paras.map((p) => {
-          const scale = Math.pow(0.85, p.stage - 1);
-          return (
-            <div
-              key={p.id}
-              className={`parachan ${p.isFood ? 'food' : ''}`}
-              style={{
-                left: `${p.x}px`,
-                top: `${p.y}px`,
-                transform: `scale(${scale})`,
-                transformOrigin: 'top left'
-              }}
-              onClick={() => splitParachan(p.id)}
-            >
+    <div className="layout">
+      {/* ヘッダー：アプリ名を表示 */}
+      <header className="app-header">
+        <h1>ぷらちゃん</h1>
+      </header>
 
-              {/* 【追加】もぐもぐ中のセリフ表示 */}
-              {p.isEating && (
-                <div style={{
-                  position: 'absolute',
-                  top: '-30px', // ぱらちゃんの少し上に表示
-                  left: '50%',
-                  transform: 'translateX(-50%)',
-                  fontSize: '14px',
-                  fontWeight: 'bold',
-                  color: '#fff',
-                  backgroundColor: 'rgba(0,0,0,0.5)', // 読みやすいように背景を少し暗く
-                  padding: '2px 6px',
-                  borderRadius: '10px',
-                  whiteSpace: 'nowrap'
-                }}>
-                  {p.munchText}
-                </div>
-              )}
-              {p.icon}
-            </div>
-          );
-        })}
-      </div>
+      {/* メインコンテンツ：これまでのゲーム画面 */}
+      <main className="container">
+        <div className="stage">
+          {paras.map((p) => {
+            const scale = Math.pow(0.85, p.stage - 1);
+            return (
+              <div
+                key={p.id}
+                className={`parachan ${p.isFood ? 'food' : ''}`}
+                style={{
+                  left: `${p.x}px`,
+                  top: `${p.y}px`,
+                  transform: `scale(${scale})`,
+                  transformOrigin: 'top left'
+                }}
+                onClick={() => splitParachan(p.id)}
+              >
+                {/* もぐもぐ中のセリフ表示 */}
+                {p.isEating && (
+                  <div style={{
+                    position: 'absolute',
+                    top: '-30px',
+                    left: '50%',
+                    transform: 'translateX(-50%)',
+                    fontSize: '14px',
+                    fontWeight: 'bold',
+                    color: '#fff',
+                    backgroundColor: 'rgba(0,0,0,0.5)',
+                    padding: '2px 6px',
+                    borderRadius: '10px',
+                    whiteSpace: 'nowrap'
+                  }}>
+                    {p.munchText}
+                  </div>
+                )}
+                {p.icon}
+              </div>
+            );
+          })}
+        </div>
 
-      <div style={{ marginTop: '20px' }}>
-        <button className="reset-button" onClick={resetParas}>
-          最初からやり直す
-        </button>
-      </div>
+        <div style={{ marginTop: '20px' }}>
+          <button className="reset-button" onClick={resetParas}>
+            最初からやり直す
+          </button>
+        </div>
 
-      <p style={{ color: 'white', marginTop: '20px' }}>
-        クリックして分裂させてね！
-        🍎 これまでに食べたフルーツ: <span style={{ fontSize: '24px', color: '#ffeb3b', fontWeight: 'bold' }}>{eatCount}</span> 個
-      </p>
+        <p style={{ color: 'white', marginTop: '20px', textAlign: 'center' }}>
+          クリックして分裂させてね！<br />
+          🍎 これまでに食べたフルーツ: <span style={{ fontSize: '24px', color: '#ffeb3b', fontWeight: 'bold' }}>{eatCount}</span> 個
+        </p>
+      </main>
+
+      {/* フッター：著作権マークを表示 */}
+      <footer className="app-footer">
+        <p>&copy; {new Date().getFullYear()} Pura-chan</p>
+      </footer>
     </div>
-  )
+  );
 }
 
 export default App
