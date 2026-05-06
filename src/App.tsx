@@ -16,6 +16,7 @@ interface Parachan {
   eatTimer?: number;    // もぐもぐが終わるまでの時間
   isDropping?: boolean; // ドロップ中（まだ食べられない）フラグ
   munchText?: string;   // もぐもぐ中のセリフを保存する
+  mergeCooldown?: number; // ←合体禁止タイマー（フレーム数）
 }
 
 function App() {
@@ -31,7 +32,7 @@ function App() {
   // 食べ物をかぞえるための変数
   const [eatCount, setEatCount] = useState(0);
 
-useEffect(() => {
+  useEffect(() => {
     let animationFrameId: number;
 
     const move = () => {
@@ -40,6 +41,12 @@ useEffect(() => {
 
         // --- 1. まずは全員の移動を計算 ---
         const movedParas = currentParas.map((p) => {
+          // --- 合体禁止タイマーのカウントダウン ---
+          let nextMergeCooldown = p.mergeCooldown || 0;
+          if (nextMergeCooldown > 0) {
+            nextMergeCooldown -= 1;
+          }
+          
           if (p.isEating && p.eatTimer && p.eatTimer > 0) {
             return { ...p, vx: 0, vy: 0, eatTimer: p.eatTimer - 1 };
           }
@@ -89,11 +96,59 @@ useEffect(() => {
             if (nextY <= 0 || nextY >= STAGE_HEIGHT - currentSize) nextVy = -p.vy;
           }
 
-          return { ...p, x: nextX, y: nextY, vx: nextVx, vy: nextVy, isDropping: stillDropping };
+          return { ...p, x: nextX, y: nextY, vx: nextVx, vy: nextVy, isDropping: stillDropping, mergeCooldown: nextMergeCooldown };
         });
 
+        // --- ★ここから【合体処理】の追加 ---
+        const afterMergeParas: Parachan[] = [];
+        const mergedIds = new Set<number>(); // 合体して消える予定のIDをメモする箱
+
+        for (let i = 0; i < movedParas.length; i++) {
+          const p1 = movedParas[i];
+
+          // すでに合体済み、食べ物、もぐもぐ中、タイマー作動中の場合は合体しない
+          if (mergedIds.has(p1.id) || p1.isFood || p1.isEating || (p1.mergeCooldown && p1.mergeCooldown > 0)) {
+            if (!mergedIds.has(p1.id)) afterMergeParas.push(p1);
+            continue;
+          }
+
+          // 合体相手を探す（自分より後ろにいるぱらちゃんから探す）
+          const p2 = movedParas.slice(i + 1).find(other => {
+            if (mergedIds.has(other.id) || other.isFood || other.isEating || (other.mergeCooldown && other.mergeCooldown > 0)) return false;
+    
+            const isSameStage = other.stage === p1.stage; // 同じ大きさか
+            const p1Size = BASE_PARA_SIZE * Math.pow(0.85, p1.stage - 1);
+            const dist = Math.sqrt(Math.pow(p1.x - other.x, 2) + Math.pow(p1.y - other.y, 2));
+    
+            return isSameStage && dist < p1Size * 0.6; // 近いかどうか
+          });
+
+          if (p2 && p1.stage > 1) { // 世代1（最大）でなければ合体！
+            mergedIds.add(p1.id);
+            mergedIds.add(p2.id);
+    
+            // 2匹の真ん中の位置に、1つ上の世代（大きなサイズ）を1匹作る
+            afterMergeParas.push({
+              ...p1,
+              id: Date.now() + i,
+              x: (p1.x + p2.x) / 2,
+              y: (p1.y + p2.y) / 2,
+              stage: p1.stage - 1, // 1つ大きくする
+              vx: (p1.vx + p2.vx) / 2,
+              vy: (p1.vy + p2.vy) / 2,
+              icon: '(・ω・)',
+              mergeCooldown: 60 // 合体直後にまたすぐ分裂・合体しないよう少しだけタイマーをつける
+            });
+          } else {
+            afterMergeParas.push(p1);
+          }
+        }
+        // ここで作った afterMergeParas を、次の「食べ物を消す処理」に渡すようにします
+        // そのため、次の行の movedParas.filter は afterMergeParas.filter に書き換えます
+        // --- ★ここまで【合体処理】 ---
+
         // --- 2. 食べ物を消す処理 ---
-        const finalParas = movedParas.filter(p => {
+        const finalParas = afterMergeParas.filter(p => {
           if (!p.isFood) return true;
           
           const isBeingEaten = movedParas.some(para => {
@@ -142,8 +197,8 @@ useEffect(() => {
           // --- 【分裂】まだ小さいサイズでないなら、2匹に増やす ---
           const nextStage = p.stage + 1;
           result.push(
-            { ...p, id: Date.now() + Math.random(), stage: nextStage, vx: p.vx, icon: '(・ω・)' },
-            { ...p, id: Date.now() + Math.random(), stage: nextStage, vx: -p.vx, icon: '(・ω・)' }
+            { ...p, id: Date.now() + Math.random(), stage: nextStage, vx: 0.8, vy: 0.8, icon: '(・ω・)', mergeCooldown: 120 },
+            { ...p, id: Date.now() + Math.random(), stage: nextStage, vx: -0.8, vy: -0.8, icon: '(・ω・)', mergeCooldown: 120 }
           );
         } else {
           // --- 【食べ物排出】最小サイズなら、自分はそのままで食べ物を1つ追加する ---
