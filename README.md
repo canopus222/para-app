@@ -1,73 +1,54 @@
-# React + TypeScript + Vite
+# ぷらちゃん (Pura-chan) 🫧
+**「増えて、食べて、ひとつになる。頭を空っぽにする数分間を。」**
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
 
-Currently, two official plugins are available:
+![メインビジュアル](image\ぷらちゃん.png)
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
 
-## React Compiler
+## 1. サービス概要
+「ぷらちゃん」は、かつて多くの人を癒やしたデスクトップマスコットへのリスペクトから生まれた、ブラウザで遊べる**癒やし系ミニゲーム**です。
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+クリックすると分裂し、画面を埋め尽くす「ぷらちゃん」。
+最小サイズになるとフルーツをドロップし、食べると幸せそうに「もぐもぐ」します。
+そして、同じ大きさの仲間と出会うと、再びひとつに合体します。
 
-## Expanding the ESLint configuration
+仕事や学習の合間、ちょっと疲れた時の「数分間の息抜き」のために作りました。
 
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
+## 2. 開発背景
+エンジニアとしてコードと向き合う日々の中で、ふと **「正解もエラーも気にせず、ただ画面を眺めてポチポチするだけの時間が欲しい」** と感じたことがきっかけです。
 
-```js
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
+「ぱらちゃん」という懐かしい体験をベースにしつつ、「ぷらちゃん」の姿を通じて、ユーザーに心の余裕を取り戻してほしいと考えました。
 
-      // Remove tseslint.configs.recommended and replace with this
-      tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      tseslint.configs.stylisticTypeChecked,
 
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
-```
+## 3. ✨ 主な機能
+*   **増殖と縮小**: クリックするたびに2匹に分裂！どんどん小さくなって画面を賑やかにします。
+*   **もぐもぐタイム**: 最小サイズでクリックすると、大好物のフルーツを排出。食べると「なまらうまい」「うまかー」など、各地の方言で幸せを噛み締めます。
+*   **マージ（合体）システム**: 同じサイズのぷらちゃん同士がぶつかると、ポフッとひとつ上のサイズに合体！
 
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
+## 4. 🛠 技術スタック
+初心者から一歩踏み出し、Reactの柔軟性を活かした構成です。
 
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
+| カテゴリ | 技術 | 選定理由 |
+| :--- | :--- | :--- |
+| **フロントエンド** | **React** | 多数のオブジェクト（ぷらちゃん）の状態管理を効率的に行うため。 |
+| **言語** | **TypeScript** | ぷらちゃんの状態（サイズ、速度、空腹度など）を安全に管理するため。 |
+| **スタイリング** | **CSS3** | ぷらちゃんの「ぷにぷに感」を表現する `border-radius` やアニメーションを制御。 |
+| **デプロイ** | **Vercel** | GitHubと連携し、修正を即座に世界へ届けるため。 |
+| **ロジック** | **requestAnimationFrame** | 物理計算を滑らかに行い、ストレスのない動きを実現。 |
 
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
-```
+## 5. 使い方
+1.  [デモURL] にアクセス
+2.  画面中央の「ぷらちゃん」をひたすらクリックして分裂させる
+3.  小さくなったらもう一度クリックして、リンゴやバナナを出してあげる
+4.  ぷらちゃんがフルーツを食べる様子を眺めて癒やされる
+5.  増えすぎたら、仲間同士をくっつけて大きくしてあげる
+
+
+## 6. 今後の展望
+*  デスクトップで動くようにしたい
+*  座標を上手く利用してドロップしたアイテムが最終的にどこに落ちるかを考える
+*  ぷらちゃんをもっとかわいくしたい
+*  etc
+
+---
+&copy; 2026 Pura-chan Project
